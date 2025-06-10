@@ -1,0 +1,86 @@
+# docker-compose.yml
+# version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:13-alpine3.22 # Using a lightweight PostgreSQL image
+    restart: always
+    environment:
+      POSTGRES_DB: recipe_db # Your database name
+      POSTGRES_USER: devuser # Your database user
+      POSTGRES_PASSWORD: devpassword # Your database password
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data # Mount persistent volume for data
+    ports:
+      - "5432:5432" # Expose PostgreSQL port to host (optional, but useful for host-based tools)
+    healthcheck: # Healthcheck to ensure DB is ready before dependent services start
+      test: ["CMD-SHELL", "pg_isready -U devuser -d recipe_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - PostgreSQL Management Web UI
+  pgadmin:
+    image: dpage/pgadmin4:9.4.0 # Use a recent stable pgAdmin image
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin@example.com # pgAdmin login email
+      PGADMIN_DEFAULT_PASSWORD: admin # pgAdmin login password
+    ports:
+      - "5050:80" # Map host port 5050 to container's port 80
+    depends_on:
+      db:
+        condition: service_healthy # Ensures DB is healthy before starting pgAdmin
+
+  # MinIO - S3 Compatible Object Storage
+  minio:
+    image: minio/minio:RELEASE.2025-05-24T17-08-30Z-cpuv1 # Use a recent stable release
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin # MinIO Console & API access key
+      MINIO_ROOT_PASSWORD: minioadmin # MinIO Console & API secret key
+    volumes:
+      - ./data/minio:/data # Mount persistent volume for object data
+    ports:
+      - "9000:9000" # MinIO API port (for your services to interact with)
+      - "9001:9001" # MinIO Console web UI port (for managing MinIO)
+    command: server /data --console-address ":9001" # Start MinIO server and console
+    healthcheck: # Healthcheck for MinIO
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+  
+
+  # Recipe Repository Service
+  recipe-repository-service:
+    build: ./services/recipe-repository-service # Path to the Dockerfile
+    # image: recipe-repository-service:0.1.0 # Optional: You can specify an image name and tag
+    restart: always
+    environment:
+      # Inject environment variables from docker-compose directly
+      # These will override those from .env.example if both are present in the container's final env
+      DATABASE_URL: "postgresql://devuser:devpassword@db:5432/recipe_db"
+      MINIO_ENDPOINT: "http://minio:9000" # Use 'minio' as the hostname for inter-container communication
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_SECURE: "False" # Set to 'True' if you configure MinIO with HTTPS
+
+      # Set FastAPI environment for development
+      APP_ENV: "development"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8000:8000" # Expose the FastAPI service port to your host
+    depends_on:
+      db:
+        condition: service_healthy # Ensure DB is healthy before starting
+      minio:
+        condition: service_healthy # Ensure MinIO is healthy before starting
+
+# volumes:
+  # Named volumes for persistent data (data directory is typically git-ignored)
+  # ./data/postgres is mapped to postgres_data in the above config
+  # ./data/minio is mapped to minio_data in the above config
+  # Docker Compose will create these directories if they don't exist, and manage permissions.
+  # Using bind mounts (`./data/postgres`) allows you to easily inspect the data on your host.

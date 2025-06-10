@@ -1,0 +1,37 @@
+{
+  "name": "Robot Weld Program V1",
+  "description": "Standard weld program for Robot Arm 1",
+  "major_version": 1,
+  "minor_version": 0,
+  "author": "Manufacturing Dept",
+  "recipes": [
+    {
+      "name": "Weld Cycle A",
+      "product_number": "P123-WELD-A",
+      "recipe_version": "1.0",
+      "instructions": "{\"steps\": [\"calibrate\", \"weld_path_1\", \"inspect\"]}",
+      "software_components": [
+        {
+          "component_type": "robot_firmware",
+          "original_filename": "robot_weld_v1_0.bin"
+        },
+        {
+          "component_type": "camera_config",
+          "original_filename": "camera_config_v1_0.cfg"
+        }
+      ]
+    },
+    {
+      "name": "Weld Cycle B",
+      "product_number": "P456-WELD-B",
+      "recipe_version": "1.0",
+      "instructions": "{\"steps\": [\"setup_fixture\", \"weld_path_2\", \"cool_down\"]}",
+      "software_components": [
+        {
+          "component_type": "plc_program",
+          "original_filename": "plc_weld_v1_0.plc"
+        }
+      ]
+    }
+  ]
+}

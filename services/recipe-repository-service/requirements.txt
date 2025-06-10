@@ -1,0 +1,6 @@
+fastapi==0.111.0 # Or a recent stable version
+uvicorn[standard]==0.29.0 # Or a recent stable version
+psycopg2-binary==2.9.9 # PostgreSQL adapter
+SQLAlchemy==2.0.30 # ORM for database interactions
+boto3==1.34.116 # AWS SDK for Python, used for MinIO
+python-dotenv==1.0.1 # For loading .env files locally (optional, but good for dev)

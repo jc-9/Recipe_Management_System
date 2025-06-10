@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+*.env # Environment variables should not be committed
+
+# Docker
+/data/
+# Specific volumes if you were to manage them outside of docker-compose
